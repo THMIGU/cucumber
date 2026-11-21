@@ -1,374 +1,38 @@
 use std::sync::Arc;
 
-use anyhow::{Context, bail};
-use wgpu::util::DeviceExt;
+use anyhow::Context;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::{
-	assets::texture::Texture,
-	camera::{Camera, CameraUniform},
-	error::AppResult,
-	shaders,
-	vertex::Vertex,
-};
-
-const VERTICES: &[Vertex] = &[
-	Vertex {
-		pos: [-0.5, 0.5, 0.0],
-		uv: [0.0, 0.0],
-	},
-	Vertex {
-		pos: [0.5, 0.5, 0.0],
-		uv: [1.0, 0.0],
-	},
-	Vertex {
-		pos: [0.5, -0.5, 0.0],
-		uv: [1.0, 1.0],
-	},
-	Vertex {
-		pos: [-0.5, -0.5, 0.0],
-		uv: [0.0, 1.0],
-	},
-];
-
-#[rustfmt::skip]
-const INDICES: &[u16] = &[
-	0, 2, 1,
-	0, 3, 2,
-];
+use crate::{error::AppResult, render::Render};
 
 pub struct State {
-	surface: wgpu::Surface<'static>,
-	device: wgpu::Device,
-	queue: wgpu::Queue,
-	config: wgpu::SurfaceConfiguration,
-	is_surface_configured: bool,
 	window: Arc<Window>,
-	render_pipeline: wgpu::RenderPipeline,
-	vertex_buffer: wgpu::Buffer,
-	index_buffer: wgpu::Buffer,
-	num_indices: u32,
-	diffuse_bind_group: wgpu::BindGroup,
-	camera: Camera,
-	camera_uniform: CameraUniform,
-	camera_buffer: wgpu::Buffer,
-	camera_bind_group: wgpu::BindGroup,
+	render: Render,
 }
 
 impl State {
 	pub async fn new(window: Arc<Window>) -> AppResult<Self> {
-		let size = window.inner_size();
-
-		let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-			backends: wgpu::Backends::PRIMARY,
-			flags: Default::default(),
-			memory_budget_thresholds: Default::default(),
-			backend_options: Default::default(),
-			display: None,
-		});
-
-		let surface = instance
-			.create_surface(window.clone())
-			.context("Failed to create surface")?;
-
-		let adapter = instance
-			.request_adapter(&wgpu::RequestAdapterOptions {
-				power_preference: wgpu::PowerPreference::HighPerformance,
-				compatible_surface: Some(&surface),
-				force_fallback_adapter: false,
-				apply_limit_buckets: false,
-			})
+		let render = Render::new(window.clone())
 			.await
-			.context("Failed to request adapter")?;
-
-		let (device, queue) = adapter
-			.request_device(&wgpu::DeviceDescriptor {
-				label: None,
-				required_features: wgpu::Features::empty(),
-				experimental_features: wgpu::ExperimentalFeatures::disabled(),
-				required_limits: wgpu::Limits::default(),
-				memory_hints: Default::default(),
-				trace: wgpu::Trace::Off,
-			})
-			.await
-			.context("Failed to request device")?;
-
-		let surface_caps = surface.get_capabilities(&adapter);
-		let surface_format = surface_caps
-			.formats
-			.iter()
-			.find(|f| f.is_srgb())
-			.copied()
-			.unwrap_or(surface_caps.formats[0]);
-
-		let config = wgpu::SurfaceConfiguration {
-			usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-			format: surface_format,
-			width: size.width,
-			height: size.height,
-			present_mode: if surface_caps
-				.present_modes
-				.contains(&wgpu::PresentMode::Mailbox)
-			{
-				wgpu::PresentMode::Mailbox
-			} else {
-				wgpu::PresentMode::Fifo
-			},
-			alpha_mode: surface_caps.alpha_modes[0],
-			view_formats: vec![],
-			desired_maximum_frame_latency: 2,
-			color_space: wgpu::SurfaceColorSpace::Auto,
-		};
-
-		let texture = Texture::from_file(&device, &queue, "potato.png", Some("Diffuse Texture"))
-			.context("Failed to load texture")?;
-
-		let texture_bind_group_layout =
-			device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-				entries: &[
-					wgpu::BindGroupLayoutEntry {
-						binding: 0,
-						visibility: wgpu::ShaderStages::FRAGMENT,
-						ty: wgpu::BindingType::Texture {
-							multisampled: false,
-							view_dimension: wgpu::TextureViewDimension::D2,
-							sample_type: wgpu::TextureSampleType::Float {
-								filterable: true,
-							},
-						},
-						count: None,
-					},
-					wgpu::BindGroupLayoutEntry {
-						binding: 1,
-						visibility: wgpu::ShaderStages::FRAGMENT,
-						ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-						count: None,
-					},
-				],
-				label: Some("Texture Bind Group Layout"),
-			});
-		let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-			layout: &texture_bind_group_layout,
-			entries: &[
-				wgpu::BindGroupEntry {
-					binding: 0,
-					resource: wgpu::BindingResource::TextureView(&texture.view),
-				},
-				wgpu::BindGroupEntry {
-					binding: 1,
-					resource: wgpu::BindingResource::Sampler(&texture.sampler),
-				},
-			],
-			label: Some("Diffuse Bind Group"),
-		});
-
-		let camera = Camera {
-			pos: (0.0, 0.0).into(),
-			aspect: size.width as f32 / size.height as f32,
-			scale: 1.0,
-		};
-
-		let mut camera_uniform = CameraUniform::new();
-		camera_uniform.update(&camera);
-
-		let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-			label: Some("Camera Buffer"),
-			contents: bytemuck::cast_slice(&[camera_uniform]),
-			usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-		});
-
-		let camera_bind_group_layout =
-			device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-				entries: &[wgpu::BindGroupLayoutEntry {
-					binding: 0,
-					visibility: wgpu::ShaderStages::VERTEX,
-					ty: wgpu::BindingType::Buffer {
-						ty: wgpu::BufferBindingType::Uniform,
-						has_dynamic_offset: false,
-						min_binding_size: None,
-					},
-					count: None,
-				}],
-				label: Some("Camera Bind Group Layout"),
-			});
-		let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-			layout: &camera_bind_group_layout,
-			entries: &[wgpu::BindGroupEntry {
-				binding: 0,
-				resource: camera_buffer.as_entire_binding(),
-			}],
-			label: Some("Camera Bind Group"),
-		});
-
-		let vertex_shader = shaders::create_vertex_shader(&device);
-		let fragment_shader = shaders::create_fragment_shader(&device);
-
-		let render_pipeline_layout =
-			device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-				label: Some("Render Pipeline Layout"),
-				bind_group_layouts: &[
-					Some(&texture_bind_group_layout),
-					Some(&camera_bind_group_layout),
-				],
-				immediate_size: 0,
-			});
-
-		let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-			label: Some("Render Pipeline"),
-			layout: Some(&render_pipeline_layout),
-			vertex: wgpu::VertexState {
-				module: &vertex_shader,
-				entry_point: Some("vs_main"),
-				buffers: &[Some(Vertex::desc())],
-				compilation_options: wgpu::PipelineCompilationOptions::default(),
-			},
-			fragment: Some(wgpu::FragmentState {
-				module: &fragment_shader,
-				entry_point: Some("fs_main"),
-				targets: &[Some(wgpu::ColorTargetState {
-					format: config.format,
-					blend: Some(wgpu::BlendState::REPLACE),
-					write_mask: wgpu::ColorWrites::ALL,
-				})],
-				compilation_options: wgpu::PipelineCompilationOptions::default(),
-			}),
-			primitive: wgpu::PrimitiveState {
-				topology: wgpu::PrimitiveTopology::TriangleList,
-				strip_index_format: None,
-				front_face: wgpu::FrontFace::Ccw,
-				cull_mode: Some(wgpu::Face::Back),
-				polygon_mode: wgpu::PolygonMode::Fill,
-				unclipped_depth: false,
-				conservative: false,
-			},
-			depth_stencil: None,
-			multisample: wgpu::MultisampleState {
-				count: 1,
-				mask: !0,
-				alpha_to_coverage_enabled: false,
-			},
-			multiview_mask: None,
-			cache: None,
-		});
-
-		let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-			label: Some("Vertex Buffer"),
-			contents: bytemuck::cast_slice(VERTICES),
-			usage: wgpu::BufferUsages::VERTEX,
-		});
-		let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-			label: Some("Index Buffer"),
-			contents: bytemuck::cast_slice(INDICES),
-			usage: wgpu::BufferUsages::INDEX,
-		});
-
-		let num_indices = INDICES.len() as u32;
+			.context("Failed to initialize renderer")?;
 
 		Ok(Self {
-			surface,
-			device,
-			queue,
-			config,
-			is_surface_configured: false,
 			window,
-			render_pipeline,
-			vertex_buffer,
-			index_buffer,
-			num_indices,
-			diffuse_bind_group,
-			camera,
-			camera_uniform,
-			camera_buffer,
-			camera_bind_group,
+			render,
 		})
 	}
 
 	pub fn resize(&mut self, width: u32, height: u32) {
-		if width > 0 && height > 0 {
-			self.config.width = width;
-			self.config.height = height;
-
-			self.surface
-				.configure(&self.device, &self.config);
-			self.is_surface_configured = true;
-		}
+		self.render
+			.resize(width, height);
 	}
 
 	pub fn render(&mut self) -> AppResult {
 		self.window.request_redraw();
 
-		if !self.is_surface_configured {
-			return Ok(());
-		}
-
-		let output = match self
-			.surface
-			.get_current_texture()
-		{
-			wgpu::CurrentSurfaceTexture::Success(surface_texture) => surface_texture,
-			wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => surface_texture,
-			wgpu::CurrentSurfaceTexture::Timeout
-			| wgpu::CurrentSurfaceTexture::Occluded
-			| wgpu::CurrentSurfaceTexture::Validation => {
-				return Ok(());
-			}
-			wgpu::CurrentSurfaceTexture::Outdated => {
-				self.surface
-					.configure(&self.device, &self.config);
-				return Ok(());
-			}
-			wgpu::CurrentSurfaceTexture::Lost => {
-				bail!("Lost device");
-			}
-		};
-
-		let view = output
-			.texture
-			.create_view(&wgpu::TextureViewDescriptor::default());
-
-		let mut encoder = self
-			.device
-			.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-				label: Some("Render Encoder"),
-			});
-
-		{
-			let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-				label: Some("Render Pass"),
-				color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-					view: &view,
-					resolve_target: None,
-					depth_slice: None,
-					ops: wgpu::Operations {
-						load: wgpu::LoadOp::Clear(wgpu::Color {
-							r: 0.0,
-							g: 0.0,
-							b: 0.0,
-							a: 1.0,
-						}),
-						store: wgpu::StoreOp::Store,
-					},
-				})],
-				depth_stencil_attachment: None,
-				occlusion_query_set: None,
-				timestamp_writes: None,
-				multiview_mask: None,
-			});
-
-			render_pass.set_pipeline(&self.render_pipeline);
-
-			render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-			render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-
-			render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-			render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-			render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-		}
-
-		self.queue
-			.submit(std::iter::once(encoder.finish()));
-		self.queue.present(output);
+		self.render
+			.render_temp()
+			.context("Failed to render")?;
 
 		Ok(())
 	}

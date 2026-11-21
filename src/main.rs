@@ -4,9 +4,8 @@ mod app;
 mod assets;
 mod camera;
 mod error;
-mod shaders;
+mod render;
 mod state;
-mod vertex;
 
 use anyhow::Context;
 use winit::event_loop::{ControlFlow, EventLoop};
