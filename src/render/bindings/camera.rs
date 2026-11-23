@@ -15,11 +15,9 @@ impl CameraUniform {
 		}
 	}
 
-	// pub fn update(&mut self, camera: &Camera) {
-	// 	self.mat = camera
-	// 		.matrix()
-	// 		.to_cols_array_2d();
-	// }
+	pub fn update(&mut self, mat: Mat4) {
+		self.mat = mat.to_cols_array_2d();
+	}
 }
 
 pub struct CameraBinding {

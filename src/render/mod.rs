@@ -180,7 +180,7 @@ impl Render {
 
 		self.camera_binding
 			.uniform
-			.mat = ortho.to_cols_array_2d();
+			.update(ortho);
 		self.gpu_ctx
 			.queue
 			.write_buffer(
@@ -213,7 +213,12 @@ impl Render {
 			});
 
 			render_pass.set_pipeline(&self.pipeline);
-			self.draw_texture(&mut render_pass, &texture, (50.0, 50.0).into(), Vec2::splat(100.0));
+			self.draw_texture(
+				&mut render_pass,
+				&texture,
+				(400.0, 0.0).into(),
+				(600.0, 600.0).into(),
+			);
 		}
 
 		self.gpu_ctx
