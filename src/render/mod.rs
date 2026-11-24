@@ -114,9 +114,13 @@ impl Render {
 	}
 
 	pub fn render_temp(&mut self) -> AppResult {
-		if !self.surface_state.configured {
+		let Some(_) = self
+			.surface_state
+			.surface
+			.get_configuration()
+		else {
 			return Ok(());
-		}
+		};
 
 		let output = match self
 			.surface_state
@@ -243,7 +247,7 @@ impl Render {
 			self.surface_state
 				.surface
 				.configure(&self.gpu_ctx.device, &self.surface_state.config);
-			self.surface_state.configured = true;
+			// self.surface_state.configured = true;
 		}
 	}
 }

@@ -2,8 +2,9 @@
 
 mod app;
 mod assets;
-mod camera;
+mod core;
 mod error;
+mod graphics;
 mod render;
 mod state;
 

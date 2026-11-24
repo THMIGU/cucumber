@@ -1,0 +1,79 @@
+use std::sync::Arc;
+
+use anyhow::Context;
+use winit::window::Window;
+
+use crate::error::AppResult;
+
+pub struct WgpuContext {
+	pub device: wgpu::Device,
+	pub queue: wgpu::Queue,
+	pub surface: wgpu::Surface<'static>,
+	pub surface_config: wgpu::SurfaceConfiguration,
+}
+
+impl WgpuContext {
+	pub async fn new(instance: &wgpu::Instance, window: Arc<Window>) -> AppResult<Self> {
+		let size = window.inner_size();
+
+		let surface = instance
+			.create_surface(window.clone())
+			.context("Failed to create surface")?;
+
+		let adapter = instance
+			.request_adapter(&wgpu::RequestAdapterOptions {
+				power_preference: wgpu::PowerPreference::HighPerformance,
+				compatible_surface: Some(&surface),
+				force_fallback_adapter: false,
+				apply_limit_buckets: false,
+			})
+			.await
+			.context("Failed to request adapter")?;
+
+		let surface_caps = surface.get_capabilities(&adapter);
+		let surface_format = surface_caps
+			.formats
+			.iter()
+			.find(|f| f.is_srgb())
+			.copied()
+			.unwrap_or(surface_caps.formats[0]);
+
+		let surface_config = wgpu::SurfaceConfiguration {
+			usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+			format: surface_format,
+			width: size.width,
+			height: size.height,
+			present_mode: if surface_caps
+				.present_modes
+				.contains(&wgpu::PresentMode::Mailbox)
+			{
+				wgpu::PresentMode::Mailbox
+			} else {
+				wgpu::PresentMode::Fifo
+			},
+			alpha_mode: surface_caps.alpha_modes[0],
+			view_formats: vec![],
+			desired_maximum_frame_latency: 2,
+			color_space: wgpu::SurfaceColorSpace::Auto,
+		};
+
+		let (device, queue) = adapter
+			.request_device(&wgpu::DeviceDescriptor {
+				label: None,
+				required_features: wgpu::Features::empty(),
+				experimental_features: wgpu::ExperimentalFeatures::disabled(),
+				required_limits: wgpu::Limits::default(),
+				memory_hints: Default::default(),
+				trace: wgpu::Trace::Off,
+			})
+			.await
+			.context("Failed to request device")?;
+
+		Ok(Self {
+			device,
+			queue,
+			surface,
+			surface_config,
+		})
+	}
+}
