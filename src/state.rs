@@ -31,18 +31,22 @@ impl State {
 			.create_texture(Some("potato"), "potato.png")
 			.context("Failed to create texture")?;
 
-		let mut sprite1 = Sprite::new(Some("potato"), texture);
-		sprite1.transform.scale = Vec2::splat(300.0);
+		let mut potato1 = Sprite::new(Some("potato1"), texture);
+		potato1.transform.scale = Vec2::splat(300.0);
 
-		let mut sprite2 = Sprite::new(Some("potato2"), texture);
-		sprite2.transform.position = Vec2::splat(100.0);
-		sprite2.transform.scale = Vec2::splat(300.0);
+		let mut potato2 = Sprite::new(Some("potato2"), texture);
+		potato2.transform.position = Vec2::splat(100.0);
+		potato2.transform.scale = Vec2::splat(300.0);
+
+		let mut potato3 = Sprite::new(Some("potato3"), texture);
+		potato3.transform.position = Vec2::splat(200.0);
+		potato3.transform.scale = Vec2::splat(300.0);
 
 		Ok(Self {
 			window,
 			wgpu,
 			camera,
-			sprites: vec![sprite1, sprite2],
+			sprites: vec![potato1, potato2, potato3],
 		})
 	}
 
