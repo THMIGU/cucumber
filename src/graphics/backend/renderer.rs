@@ -50,7 +50,6 @@ impl Renderer {
 		pass.set_pipeline(&self.pipeline.pipeline);
 
 		pass.set_bind_group(0, &self.camera.bind_group, &[]);
-		pass.set_bind_group(1, &self.transform.bind_group, &[]);
 
 		pass.set_vertex_buffer(
 			0,
@@ -65,7 +64,7 @@ impl Renderer {
 			wgpu::IndexFormat::Uint16,
 		);
 
-		for sprite in sprites {
+		for (index, sprite) in sprites.iter().enumerate() {
 			let Some(texture) = textures.get(sprite.texture) else {
 				log::warn!(
 					"Missing texture '{}' for sprite '{}'",
@@ -81,9 +80,11 @@ impl Renderer {
 			};
 
 			self.transform
-				.write_transform(queue, &sprite.transform);
+				.write_transform(queue, &sprite.transform, index);
 
+			pass.set_bind_group(1, &self.transform.bind_group, &[self.transform.offset(index)]);
 			pass.set_bind_group(2, &texture.bind_group, &[]);
+
 			pass.draw_indexed(0..6, 0, 0..1);
 		}
 	}

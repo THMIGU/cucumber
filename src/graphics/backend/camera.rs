@@ -34,7 +34,7 @@ impl GpuCamera {
 
 	pub fn write_camera(&self, queue: &wgpu::Queue, camera: &Camera) {
 		let uniform = CameraUniform::from_transform(&camera.transform);
-		queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[uniform]));
+		queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&uniform));
 	}
 }
 

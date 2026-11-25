@@ -30,14 +30,19 @@ impl State {
 		let texture = wgpu
 			.create_texture(Some("potato"), "potato.png")
 			.context("Failed to create texture")?;
-		let mut sprite = Sprite::new(Some("potato"), texture);
-		sprite.transform.scale = Vec2::splat(300.0);
+
+		let mut sprite1 = Sprite::new(Some("potato"), texture);
+		sprite1.transform.scale = Vec2::splat(300.0);
+
+		let mut sprite2 = Sprite::new(Some("potato2"), texture);
+		sprite2.transform.position = Vec2::splat(100.0);
+		sprite2.transform.scale = Vec2::splat(300.0);
 
 		Ok(Self {
 			window,
 			wgpu,
 			camera,
-			sprites: vec![sprite],
+			sprites: vec![sprite1, sprite2],
 		})
 	}
 
