@@ -6,6 +6,7 @@ use crate::graphics::{
 		texture::TextureManager,
 		transform::GpuTransform,
 	},
+	camera::Camera,
 	sprite::Sprite,
 };
 
@@ -31,41 +32,20 @@ impl Renderer {
 		}
 	}
 
+	pub fn texture_layout(&self) -> &wgpu::BindGroupLayout {
+		&self.pipeline.texture_layout
+	}
+
 	pub fn render(
 		&mut self,
 		queue: &wgpu::Queue,
 		pass: &mut wgpu::RenderPass,
-		sprites: &[Sprite],
 		textures: &TextureManager,
+		camera: &Camera,
+		sprites: &[Sprite],
 	) {
-		let mut vertices: Vec<Vertex> = vec![];
-		for sprite in sprites {
-			let pos = &sprite.transform.position;
-			let scl = &sprite.transform.scale;
-
-			let sprite_vertices = [
-				Vertex {
-					pos: (pos.x, scl.y + pos.y).into(),
-					uv: (0.0, 1.0).into(),
-				},
-				Vertex {
-					pos: (pos.x, pos.y).into(),
-					uv: (0.0, 0.0).into(),
-				},
-				Vertex {
-					pos: (scl.x + pos.x, pos.y).into(),
-					uv: (1.0, 0.0).into(),
-				},
-				Vertex {
-					pos: (scl.x + pos.x, scl.y + pos.y).into(),
-					uv: (1.0, 1.0).into(),
-				},
-			];
-			vertices.extend(sprite_vertices);
-		}
-
-		self.buffers
-			.write_vertex(queue, &vertices);
+		self.camera
+			.write_camera(queue, camera);
 
 		pass.set_pipeline(&self.pipeline.pipeline);
 
@@ -85,10 +65,14 @@ impl Renderer {
 			wgpu::IndexFormat::Uint16,
 		);
 
-		for (index, sprite) in sprites.iter().enumerate() {
+		for sprite in sprites {
 			let Some(texture) = textures.get(sprite.texture) else {
 				log::warn!(
-					"Missing texture for sprite '{}'",
+					"Missing texture '{}' for sprite '{}'",
+					sprite
+						.texture
+						.label
+						.unwrap_or("unknown"),
 					sprite
 						.label
 						.unwrap_or("unknown")
@@ -100,7 +84,7 @@ impl Renderer {
 				.write_transform(queue, &sprite.transform);
 
 			pass.set_bind_group(2, &texture.bind_group, &[]);
-			pass.draw_indexed(0..6, (index * 4) as i32, 0..1);
+			pass.draw_indexed(0..6, 0, 0..1);
 		}
 	}
 }

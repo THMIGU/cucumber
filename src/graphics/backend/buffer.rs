@@ -1,6 +1,24 @@
 use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
 
+const VERTICES: [Vertex; 4] = [
+	Vertex {
+		pos: [0.0, 1.0],
+		uv: [0.0, 1.0],
+	},
+	Vertex {
+		pos: [0.0, 0.0],
+		uv: [0.0, 0.0],
+	},
+	Vertex {
+		pos: [1.0, 0.0],
+		uv: [1.0, 0.0],
+	},
+	Vertex {
+		pos: [1.0, 1.0],
+		uv: [1.0, 1.0],
+	},
+];
 #[rustfmt::skip]
 const INDICES: [u16; 6] = [
 	0, 1, 2,
@@ -42,11 +60,10 @@ pub struct Buffers {
 
 impl Buffers {
 	pub fn new(device: &wgpu::Device) -> Self {
-		let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+		let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
 			label: Some("Vertex Buffer"),
-			size: 64 * 1024,
-			usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-			mapped_at_creation: false,
+			contents: bytemuck::cast_slice(&VERTICES),
+			usage: wgpu::BufferUsages::VERTEX,
 		});
 		let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
 			label: Some("Index Buffer"),
@@ -58,9 +75,5 @@ impl Buffers {
 			vertex_buffer,
 			index_buffer,
 		}
-	}
-
-	pub fn write_vertex(&self, queue: &wgpu::Queue, vertices: &Vec<Vertex>) {
-		queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
 	}
 }

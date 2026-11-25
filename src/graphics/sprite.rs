@@ -5,3 +5,13 @@ pub struct Sprite {
 	pub texture: TextureHandle,
 	pub transform: Transform,
 }
+
+impl Sprite {
+	pub fn new(label: Option<&'static str>, texture: TextureHandle) -> Self {
+		Self {
+			label,
+			texture,
+			transform: Default::default(),
+		}
+	}
+}

@@ -6,8 +6,14 @@ use winit::window::Window;
 use crate::{
 	error::AppResult,
 	graphics::{
-		backend::{context::WgpuContext, renderer::Renderer, texture::TextureManager},
+		backend::{
+			context::WgpuContext,
+			renderer::Renderer,
+			texture::{GpuTexture, TextureManager},
+		},
+		camera::Camera,
 		sprite::Sprite,
+		texture::TextureHandle,
 	},
 };
 
@@ -47,7 +53,26 @@ impl WgpuBackend {
 		}
 	}
 
-	pub fn render(&mut self, sprites: &[Sprite]) -> AppResult {
+	pub fn create_texture(
+		&mut self,
+		label: Option<&'static str>,
+		filename: &'static str,
+	) -> AppResult<TextureHandle> {
+		let context = &self.context;
+		let device = &context.device;
+		let queue = &context.queue;
+
+		let layout = self.renderer.texture_layout();
+
+		let texture = GpuTexture::from_file(device, queue, layout, filename, label)
+			.context("Failed to create GPU texture")?;
+
+		Ok(self
+			.textures
+			.add_texture(label, texture))
+	}
+
+	pub fn render(&mut self, camera: &Camera, sprites: &[Sprite]) -> AppResult {
 		let context = &self.context;
 
 		let device = &context.device;
@@ -108,7 +133,7 @@ impl WgpuBackend {
 			});
 
 			self.renderer
-				.render(queue, &mut render_pass, sprites, &self.textures);
+				.render(queue, &mut render_pass, &self.textures, camera, sprites);
 		}
 
 		queue.submit(std::iter::once(encoder.finish()));
