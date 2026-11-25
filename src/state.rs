@@ -28,9 +28,7 @@ impl State {
 		let mut camera = Camera::new(Some("camera"));
 		camera.transform.scale = (180.0 * aspect, 180.0).into();
 
-		let texture = wgpu
-			.create_texture(Some("potato"), "potato.png")
-			.context("Failed to create texture")?;
+		let texture = wgpu.create_texture(Some("potato"), "potato.png")?;
 
 		let mut potato1 = Sprite::new(Some("potato1"), texture);
 		potato1.transform.scale = Vec2::splat(30.0);
