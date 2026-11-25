@@ -3,36 +3,32 @@ use std::sync::Arc;
 use anyhow::Context;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::{error::AppResult, render::Render};
+use crate::{error::AppResult, graphics::backend::wgpu_backend::WgpuBackend};
 
 pub struct State {
 	window: Arc<Window>,
-	render: Render,
+	wgpu: WgpuBackend,
 }
 
 impl State {
 	pub async fn new(window: Arc<Window>) -> AppResult<Self> {
-		let render = Render::new(window.clone())
+		let wgpu = WgpuBackend::new(window.clone())
 			.await
-			.context("Failed to initialize renderer")?;
+			.context("Failed to initialize WGPU")?;
 
 		Ok(Self {
 			window,
-			render,
+			wgpu,
 		})
 	}
 
 	pub fn resize(&mut self, width: u32, height: u32) {
-		self.render
+		self.wgpu
 			.resize(width, height);
 	}
 
 	pub fn render(&mut self) -> AppResult {
 		self.window.request_redraw();
-
-		self.render
-			.render_temp()
-			.context("Failed to render")?;
 
 		Ok(())
 	}

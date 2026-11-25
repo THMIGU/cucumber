@@ -13,8 +13,16 @@ pub struct WgpuContext {
 }
 
 impl WgpuContext {
-	pub async fn new(instance: &wgpu::Instance, window: Arc<Window>) -> AppResult<Self> {
+	pub async fn new(window: Arc<Window>) -> AppResult<Self> {
 		let size = window.inner_size();
+
+		let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+			backends: wgpu::Backends::PRIMARY,
+			flags: Default::default(),
+			memory_budget_thresholds: Default::default(),
+			backend_options: Default::default(),
+			display: None,
+		});
 
 		let surface = instance
 			.create_surface(window.clone())

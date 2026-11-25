@@ -13,6 +13,12 @@ pub struct TextureManager {
 }
 
 impl TextureManager {
+	pub fn new() -> Self {
+		Self {
+			textures: HashMap::new(),
+		}
+	}
+
 	pub fn get(&self, handle: TextureHandle) -> Option<&GpuTexture> {
 		self.textures.get(&handle.id)
 	}

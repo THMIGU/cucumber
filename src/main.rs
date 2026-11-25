@@ -5,7 +5,6 @@ mod assets;
 mod core;
 mod error;
 mod graphics;
-mod render;
 mod state;
 
 use anyhow::Context;
