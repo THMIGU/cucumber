@@ -2,11 +2,10 @@ use std::sync::Arc;
 
 use winit::{
 	application::ApplicationHandler,
-	dpi::PhysicalSize,
 	event::{KeyEvent, WindowEvent},
 	event_loop::ActiveEventLoop,
 	keyboard::PhysicalKey,
-	window::{WindowAttributes, WindowId},
+	window::{Fullscreen, WindowAttributes, WindowId},
 };
 
 use crate::state::State;
@@ -20,8 +19,7 @@ impl ApplicationHandler for App {
 	fn resumed(&mut self, event_loop: &ActiveEventLoop) {
 		let window_attributes = WindowAttributes::default()
 			.with_title("cucumber")
-			.with_inner_size(PhysicalSize::new(800, 600))
-			.with_resizable(false);
+			.with_fullscreen(Some(Fullscreen::Borderless(None)));
 
 		let window = Arc::new(
 			event_loop

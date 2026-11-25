@@ -4,8 +4,11 @@ use image::GenericImageView;
 use crate::{assets::texture, error::AppResult, graphics::texture::TextureHandle};
 
 pub struct GpuTexture {
+	#[allow(dead_code)]
 	pub texture: wgpu::Texture,
+	#[allow(dead_code)]
 	pub view: wgpu::TextureView,
+	#[allow(dead_code)]
 	pub sampler: wgpu::Sampler,
 	pub bind_group: wgpu::BindGroup,
 }

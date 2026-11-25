@@ -6,7 +6,7 @@ use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use crate::{
 	error::AppResult,
-	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera, sprite::Sprite},
+	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera, fps::FPS, sprite::Sprite},
 };
 
 pub struct State {
@@ -14,6 +14,7 @@ pub struct State {
 	wgpu: WgpuBackend,
 	camera: Camera,
 	sprites: Vec<Sprite>,
+	fps: FPS,
 }
 
 impl State {
@@ -47,6 +48,7 @@ impl State {
 			wgpu,
 			camera,
 			sprites: vec![potato1, potato2, potato3],
+			fps: FPS::new(),
 		})
 	}
 
@@ -57,6 +59,10 @@ impl State {
 
 	pub fn render(&mut self) -> AppResult {
 		self.window.request_redraw();
+
+		let fps = self.fps.fps();
+		self.window
+			.set_title(&format!("cucumber | fps: {:.0}", fps));
 
 		self.wgpu
 			.render(&self.camera, &self.sprites)

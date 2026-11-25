@@ -1,6 +1,7 @@
 use crate::core::transform::Transform;
 
 pub struct Camera {
+	#[allow(dead_code)]
 	pub label: Option<&'static str>,
 	pub transform: Transform,
 }

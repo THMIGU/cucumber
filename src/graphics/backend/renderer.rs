@@ -1,9 +1,6 @@
 use crate::graphics::{
 	backend::{
-		buffer::{Buffers, Vertex},
-		camera::GpuCamera,
-		pipeline::Pipeline,
-		texture::TextureManager,
+		buffer::Buffers, camera::GpuCamera, pipeline::Pipeline, texture::TextureManager,
 		transform::GpuTransform,
 	},
 	camera::Camera,
