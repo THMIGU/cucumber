@@ -6,7 +6,7 @@ use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use crate::{
 	error::AppResult,
-	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera, fps::FPS, sprite::Sprite},
+	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera, sprite::Sprite},
 };
 
 pub struct State {
@@ -14,7 +14,6 @@ pub struct State {
 	wgpu: WgpuBackend,
 	camera: Camera,
 	sprites: Vec<Sprite>,
-	fps: FPS,
 }
 
 impl State {
@@ -24,31 +23,31 @@ impl State {
 			.context("Failed to initialize wgpu")?;
 
 		let size = window.inner_size();
+		let aspect = size.width as f32 / size.height as f32;
 
 		let mut camera = Camera::new(Some("camera"));
-		camera.transform.scale = (size.width as f32, size.height as f32).into();
+		camera.transform.scale = (180.0 * aspect, 180.0).into();
 
 		let texture = wgpu
 			.create_texture(Some("potato"), "potato.png")
 			.context("Failed to create texture")?;
 
 		let mut potato1 = Sprite::new(Some("potato1"), texture);
-		potato1.transform.scale = Vec2::splat(300.0);
+		potato1.transform.scale = Vec2::splat(30.0);
 
 		let mut potato2 = Sprite::new(Some("potato2"), texture);
-		potato2.transform.position = Vec2::splat(100.0);
-		potato2.transform.scale = Vec2::splat(300.0);
+		potato2.transform.position = Vec2::splat(10.0);
+		potato2.transform.scale = Vec2::splat(30.0);
 
 		let mut potato3 = Sprite::new(Some("potato3"), texture);
-		potato3.transform.position = Vec2::splat(200.0);
-		potato3.transform.scale = Vec2::splat(300.0);
+		potato3.transform.position = Vec2::splat(20.0);
+		potato3.transform.scale = Vec2::splat(30.0);
 
 		Ok(Self {
 			window,
 			wgpu,
 			camera,
 			sprites: vec![potato1, potato2, potato3],
-			fps: FPS::new(),
 		})
 	}
 
@@ -59,10 +58,6 @@ impl State {
 
 	pub fn render(&mut self) -> AppResult {
 		self.window.request_redraw();
-
-		let fps = self.fps.fps();
-		self.window
-			.set_title(&format!("cucumber | fps: {:.0}", fps));
 
 		self.wgpu
 			.render(&self.camera, &self.sprites)
