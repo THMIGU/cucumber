@@ -63,11 +63,12 @@ pub struct TransformUniform {
 
 impl TransformUniform {
 	pub fn from_transform(transform: &Transform) -> Self {
-		let translation = Mat4::from_translation((transform.position, 0.0).into());
+		let translation = Mat4::from_translation(transform.position.extend(0.0));
 		let rotation = Mat4::from_rotation_z(transform.rotation);
-		let scale = Mat4::from_scale((transform.scale, 1.0).into());
+		let scale = Mat4::from_scale(transform.scale.extend(1.0));
+		let origin = Mat4::from_translation(-transform.origin.extend(0.0));
 
-		let mat = (translation * rotation * scale).to_cols_array_2d();
+		let mat = (translation * rotation * scale * origin).to_cols_array_2d();
 
 		Self {
 			mat,

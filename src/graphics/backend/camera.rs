@@ -46,11 +46,14 @@ pub struct CameraUniform {
 
 impl CameraUniform {
 	pub fn from_transform(transform: &Transform) -> Self {
+		let half_width = transform.scale.x / 2.0;
+		let half_height = transform.scale.y / 2.0;
+
 		let proj = glam::camera::rh::proj::directx::orthographic(
-			0.0,
-			transform.scale.x,
-			transform.scale.y,
-			0.0,
+			-half_width,
+			half_width,
+			half_height,
+			-half_height,
 			-1.0,
 			1.0,
 		);

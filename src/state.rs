@@ -38,8 +38,10 @@ impl State {
 		potato2.transform.scale = Vec2::splat(30.0);
 
 		let mut potato3 = Sprite::new(Some("potato3"), texture);
-		potato3.transform.position = Vec2::splat(20.0);
+		potato3.transform.position = Vec2::splat(35.0);
+		potato3.transform.origin = Vec2::splat(0.5);
 		potato3.transform.scale = Vec2::splat(30.0);
+		potato3.transform.rotation = -45_f32.to_radians();
 
 		Ok(Self {
 			window,
