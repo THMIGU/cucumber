@@ -22,6 +22,7 @@ pub struct Scene {
 impl Scene {
 	pub fn new(wgpu: &mut WgpuBackend) -> AppResult<Self> {
 		let potato_texture = wgpu.create_texture(Some("potato"), "potato.png")?;
+		let gibo_texture = wgpu.create_texture(Some("gibo"), "gibo.png")?;
 
 		let mut world = World::new();
 
@@ -34,6 +35,18 @@ impl Scene {
 				position: Vec2::ZERO,
 				origin: Vec2::splat(0.5),
 				scale: Vec2::splat(30.0),
+				rotation: 0.0,
+			},
+		));
+
+		world.spawn((
+			Texture {
+				handle: gibo_texture,
+			},
+			Transform {
+				position: Vec2::ZERO,
+				origin: Vec2::splat(0.5),
+				scale: Vec2::splat(60.0),
 				rotation: 0.0,
 			},
 		));
