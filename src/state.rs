@@ -1,19 +1,14 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use glam::Vec2;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::{
-	error::AppResult,
-	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera, sprite::Sprite},
-};
+use crate::{error::AppResult, game::scene::Scene, graphics::backend::wgpu_backend::WgpuBackend};
 
 pub struct State {
 	window: Arc<Window>,
 	wgpu: WgpuBackend,
-	camera: Camera,
-	sprites: Vec<Sprite>,
+	scene: Scene,
 }
 
 impl State {
@@ -25,29 +20,13 @@ impl State {
 		let size = window.inner_size();
 		let aspect = size.width as f32 / size.height as f32;
 
-		let mut camera = Camera::new(Some("camera"));
-		camera.transform.scale = (180.0 * aspect, 180.0).into();
-
-		let texture = wgpu.create_texture(Some("potato"), "potato.png")?;
-
-		let mut potato1 = Sprite::new(Some("potato1"), texture);
-		potato1.transform.scale = Vec2::splat(30.0);
-
-		let mut potato2 = Sprite::new(Some("potato2"), texture);
-		potato2.transform.position = Vec2::splat(10.0);
-		potato2.transform.scale = Vec2::splat(30.0);
-
-		let mut potato3 = Sprite::new(Some("potato3"), texture);
-		potato3.transform.position = Vec2::splat(35.0);
-		potato3.transform.origin = Vec2::splat(0.5);
-		potato3.transform.scale = Vec2::splat(30.0);
-		potato3.transform.rotation = -45_f32.to_radians();
+		let mut scene = Scene::new(&mut wgpu).context("Failed to create scene")?;
+		scene.camera.transform.scale = (180.0 * aspect, 180.0).into();
 
 		Ok(Self {
 			window,
 			wgpu,
-			camera,
-			sprites: vec![potato1, potato2, potato3],
+			scene,
 		})
 	}
 
@@ -59,9 +38,8 @@ impl State {
 	pub fn render(&mut self) -> AppResult {
 		self.window.request_redraw();
 
-		self.wgpu
-			.render(&self.camera, &self.sprites)
-			.context("Failed to render sprites")?;
+		self.scene
+			.render(&mut self.wgpu)?;
 
 		Ok(())
 	}

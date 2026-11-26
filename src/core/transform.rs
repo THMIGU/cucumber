@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+#[derive(Clone, Copy)]
 pub struct Transform {
 	pub position: Vec2,
 	pub origin: Vec2,

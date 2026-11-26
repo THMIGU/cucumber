@@ -4,6 +4,7 @@ mod app;
 mod assets;
 mod core;
 mod error;
+mod game;
 mod graphics;
 mod state;
 

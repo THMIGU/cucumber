@@ -26,7 +26,7 @@ const INDICES: [u16; 6] = [
 ];
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 pub struct Vertex {
 	pub pos: [f32; 2],
 	pub uv: [f32; 2],

@@ -39,7 +39,7 @@ impl GpuCamera {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 pub struct CameraUniform {
 	pub view_proj: [[f32; 4]; 4],
 }

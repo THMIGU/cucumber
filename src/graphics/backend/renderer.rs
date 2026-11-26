@@ -64,12 +64,9 @@ impl Renderer {
 		for (index, sprite) in sprites.iter().enumerate() {
 			let Some(texture) = textures.get(sprite.texture) else {
 				log::warn!(
-					"Missing texture '{}' for sprite '{}'",
+					"Missing texture '{}'",
 					sprite
 						.texture
-						.label
-						.unwrap_or("unknown"),
-					sprite
 						.label
 						.unwrap_or("unknown")
 				);
