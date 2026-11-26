@@ -46,21 +46,12 @@ impl WgpuContext {
 			.copied()
 			.unwrap_or(surface_caps.formats[0]);
 
-		let present_mode = if surface_caps
-			.present_modes
-			.contains(&wgpu::PresentMode::Mailbox)
-		{
-			wgpu::PresentMode::Mailbox
-		} else {
-			wgpu::PresentMode::Fifo
-		};
-
 		let surface_config = wgpu::SurfaceConfiguration {
 			usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
 			format: surface_format,
 			width: size.width,
 			height: size.height,
-			present_mode,
+			present_mode: wgpu::PresentMode::Fifo,
 			alpha_mode: surface_caps.alpha_modes[0],
 			view_formats: vec![],
 			desired_maximum_frame_latency: 2,

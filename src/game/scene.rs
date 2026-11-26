@@ -16,6 +16,7 @@ use crate::{
 pub struct Scene {
 	pub world: World,
 	pub camera: Camera,
+	pub accumulator: Duration,
 }
 
 impl Scene {
@@ -42,6 +43,7 @@ impl Scene {
 		Ok(Self {
 			world,
 			camera,
+			accumulator: Duration::ZERO,
 		})
 	}
 
@@ -50,6 +52,8 @@ impl Scene {
 	}
 
 	pub fn update(&mut self, dt: Duration) {
-		update_potato(&mut self.world, dt);
+		self.accumulator += dt;
+
+		update_potato(&mut self.world, dt, self.accumulator);
 	}
 }
