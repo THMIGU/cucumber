@@ -1,10 +1,15 @@
+use std::time::Duration;
+
 use glam::Vec2;
 use hecs::World;
 
 use crate::{
 	core::transform::Transform,
 	error::AppResult,
-	game::{components::texture::Texture, systems::render::render_system},
+	game::{
+		components::{potato::Potato, texture::Texture},
+		systems::{potato::update_potato, render::render_system},
+	},
 	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera},
 };
 
@@ -20,6 +25,7 @@ impl Scene {
 		let mut world = World::new();
 
 		world.spawn((
+			Potato,
 			Texture {
 				handle: potato_texture,
 			},
@@ -41,5 +47,9 @@ impl Scene {
 
 	pub fn render(&self, wgpu: &mut WgpuBackend) -> AppResult {
 		render_system(wgpu, &self.camera, &self.world)
+	}
+
+	pub fn update(&mut self, dt: Duration) {
+		update_potato(&mut self.world, dt);
 	}
 }

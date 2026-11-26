@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use anyhow::Context;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
@@ -9,6 +9,7 @@ pub struct State {
 	window: Arc<Window>,
 	wgpu: WgpuBackend,
 	scene: Scene,
+	last_frame: Instant,
 }
 
 impl State {
@@ -27,6 +28,7 @@ impl State {
 			window,
 			wgpu,
 			scene,
+			last_frame: Instant::now(),
 		})
 	}
 
@@ -52,6 +54,9 @@ impl State {
 	}
 
 	pub fn update(&mut self) {
-		()
+		let dt = self.last_frame.elapsed();
+		self.last_frame = Instant::now();
+
+		self.scene.update(dt);
 	}
 }
