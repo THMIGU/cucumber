@@ -17,6 +17,10 @@ pub struct App {
 
 impl ApplicationHandler for App {
 	fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+		if self.state.is_some() {
+			return;
+		}
+
 		let window_attributes = WindowAttributes::default()
 			.with_title("cucumber")
 			.with_fullscreen(Some(Fullscreen::Borderless(None)));
