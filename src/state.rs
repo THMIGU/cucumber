@@ -1,14 +1,23 @@
 use std::{sync::Arc, time::Instant};
 
 use anyhow::Context;
-use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
+use gilrs::Gilrs;
+use winit::{event::WindowEvent, window::Window};
+use winit_input_map::InputMap;
 
-use crate::{error::AppResult, game::scene::Scene, graphics::backend::wgpu_backend::WgpuBackend};
+use crate::{
+	core::input::{Action, bindings},
+	error::AppResult,
+	game::scene::Scene,
+	graphics::backend::wgpu_backend::WgpuBackend,
+};
 
 pub struct State {
 	window: Arc<Window>,
 	wgpu: WgpuBackend,
 	scene: Scene,
+	input: InputMap<Action>,
+	gilrs: Gilrs,
 	last_frame: Instant,
 }
 
@@ -24,10 +33,15 @@ impl State {
 		let mut scene = Scene::new(&mut wgpu).context("Failed to create scene")?;
 		scene.camera.transform.scale = (180.0 * aspect, 180.0).into();
 
+		let input = InputMap::new(&bindings());
+		let gilrs = Gilrs::new().map_err(|e| anyhow::anyhow!("Failed to initialize Gilrs: {e}"))?;
+
 		Ok(Self {
 			window,
 			wgpu,
 			scene,
+			input,
+			gilrs,
 			last_frame: Instant::now(),
 		})
 	}
@@ -46,11 +60,19 @@ impl State {
 		Ok(())
 	}
 
-	pub fn handle_key(&self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
-		match (code, is_pressed) {
-			(KeyCode::Escape, true) => event_loop.exit(),
-			_ => (),
-		}
+	pub fn keyboard_input(&mut self, event: &WindowEvent) {
+		self.input
+			.update_with_window_event(event);
+	}
+
+	fn controller_input(&mut self) {
+		self.input
+			.update_with_gilrs(&mut self.gilrs);
+	}
+
+	pub fn input(&mut self) {
+		self.controller_input();
+		self.scene.input(&self.input);
 	}
 
 	pub fn update(&mut self) {

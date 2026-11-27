@@ -2,13 +2,21 @@ use std::time::Duration;
 
 use glam::Vec2;
 use hecs::World;
+use winit_input_map::InputMap;
 
 use crate::{
-	core::transform::Transform,
+	core::{input::Action, transform::Transform},
 	error::AppResult,
 	game::{
-		components::{potato::Potato, texture::Texture},
-		systems::{potato::update_potato, render::render_system},
+		components::{
+			player::{Player, PlayerMovement, PlayerSpeed},
+			texture::Texture,
+			velocity::Velocity,
+		},
+		systems::{
+			input::input_system, movement::movement_system, physics::physics_system,
+			render::render_system,
+		},
 	},
 	graphics::{backend::wgpu_backend::WgpuBackend, camera::Camera},
 };
@@ -22,33 +30,21 @@ pub struct Scene {
 impl Scene {
 	pub fn new(wgpu: &mut WgpuBackend) -> AppResult<Self> {
 		let potato_texture = wgpu.create_texture(Some("potato"), "potato.png")?;
-		let gibo_texture = wgpu.create_texture(Some("gibo"), "gibo.png")?;
 
 		let mut world = World::new();
 
 		world.spawn((
-			Potato,
-			Texture {
-				handle: potato_texture,
-			},
+			Player,
+			Texture(potato_texture),
 			Transform {
 				position: Vec2::ZERO,
 				origin: Vec2::splat(0.5),
 				scale: Vec2::splat(30.0),
 				rotation: 0.0,
 			},
-		));
-
-		world.spawn((
-			Texture {
-				handle: gibo_texture,
-			},
-			Transform {
-				position: Vec2::ZERO,
-				origin: Vec2::splat(0.5),
-				scale: Vec2::splat(60.0),
-				rotation: 0.0,
-			},
+			Velocity(Vec2::ZERO),
+			PlayerMovement(Vec2::ZERO),
+			PlayerSpeed(20.0),
 		));
 
 		let camera = Camera::new(Some("camera"));
@@ -64,9 +60,14 @@ impl Scene {
 		render_system(wgpu, &self.camera, &self.world)
 	}
 
+	pub fn input(&mut self, input: &InputMap<Action>) {
+		input_system(&mut self.world, input);
+	}
+
 	pub fn update(&mut self, dt: Duration) {
 		self.accumulator += dt;
 
-		update_potato(&mut self.world, dt, self.accumulator);
+		movement_system(&mut self.world, dt);
+		physics_system(&mut self.world);
 	}
 }

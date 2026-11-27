@@ -16,7 +16,7 @@ pub fn render_system(wgpu: &mut WgpuBackend, camera: &Camera, world: &World) -> 
 		.iter()
 	{
 		sprites.push(Sprite {
-			texture: texture.handle,
+			texture: texture.0,
 			transform: transform.clone(),
 		});
 	}

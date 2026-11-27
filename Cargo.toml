@@ -26,6 +26,8 @@ image = {
 
 hecs = "0.11.2"
 glam = "0.34.3"
+winit-input-map = "0.6.2"
+gilrs = "0.11.2"
 
 anyhow = "1.0.104"
 log = "0.4.35"
