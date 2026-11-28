@@ -44,7 +44,7 @@ impl Scene {
 			},
 			Velocity(Vec2::ZERO),
 			PlayerMovement(Vec2::ZERO),
-			PlayerSpeed(10.0),
+			PlayerSpeed(1200.0),
 		));
 
 		let camera = Camera::new(Some("camera"));
@@ -68,6 +68,6 @@ impl Scene {
 		self.accumulator += dt;
 
 		movement_system(&mut self.world, dt);
-		physics_system(&mut self.world);
+		physics_system(&mut self.world, dt);
 	}
 }
