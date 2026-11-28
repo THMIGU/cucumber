@@ -8,15 +8,18 @@ use crate::game::components::{
 };
 
 pub fn movement_system(world: &mut World, dt: Duration) {
+	let delta = dt.as_secs_f32();
+	let damping = 10.0;
+	let decay = (-damping * delta).exp();
+
 	for (velocity, movement, speed) in
 		world.query_mut::<(&mut Velocity, &PlayerMovement, &PlayerSpeed)>()
 	{
-		let delta = dt.as_secs_f32();
-
-		velocity.0 *= (-10.0 * delta).exp();
-		velocity.0 += movement
+		let input = movement
 			.0
-			.clamp_length_max(1.0)
-			* speed.0 * delta;
+			.clamp_length_max(1.0);
+		let acceleration = input * speed.0;
+
+		velocity.0 = velocity.0 * decay + acceleration * ((1.0 - decay) / damping);
 	}
 }

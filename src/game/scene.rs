@@ -44,7 +44,7 @@ impl Scene {
 			},
 			Velocity(Vec2::ZERO),
 			PlayerMovement(Vec2::ZERO),
-			PlayerSpeed(20.0),
+			PlayerSpeed(10.0),
 		));
 
 		let camera = Camera::new(Some("camera"));
